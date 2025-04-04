@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Random Image Slideshow</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      height: 100%;
+      overflow: hidden;
+    }
+    #imageDisplay {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      flex-direction: column;
+      color: white;
+    }
+    #mainImage {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    #caption {
+      margin-top: 10px;
+      font-size: 1.5em;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="imageDisplay" style="display:none;">
+    <img id="mainImage" src="" alt="Slideshow Image">
+    <div id="caption"></div>
+  </div>
+
+  <script>
+    const images = [];
+    let interval;
+
+    function changeImage() {
+      const index = Math.floor(Math.random() * images.length);
+      const { url, caption } = images[index];
+      const img = document.getElementById("mainImage");
+      const captionDiv = document.getElementById("caption");
+
+      img.src = url;
+      captionDiv.innerText = caption || "";
+    }
+
+    async function startSlideshow(fileUrl) {
+      // Automatically wrap with proxy unless already using it
+      if (!fileUrl.startsWith("https://api.allorigins.win/raw?url=")) {
+        fileUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(fileUrl);
+      }
+
+      try {
+        const response = await fetch(fileUrl);
+        const text = await response.text();
+        const lines = text.split("\n").map(line => line.trim()).filter(line => line);
+        let pendingCaption = null;
+
+        for (let line of lines) {
+          if (line.startsWith("#")) {
+            pendingCaption = line.substring(1).trim();
+          } else {
+            images.push({
+              url: line,
+              caption: pendingCaption || ""
+            });
+            pendingCaption = null;
+          }
+        }
+
+        if (images.length === 0) {
+          alert("No valid images found in the file.");
+          return;
+        }
+
+        document.getElementById("imageDisplay").style.display = "flex";
+        if (interval) clearInterval(interval);
+        changeImage();
+        interval = setInterval(changeImage, 5000);
+      } catch (error) {
+        alert("Failed to load or parse the file.");
+        console.error("Error loading file:", error);
+      }
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const file = params.get("file");
+    if (file) {
+      startSlideshow(file);
+    } else {
+      document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?file=URL parameter</h1>";
+    }
+  </script>
+</body>
+</html>
