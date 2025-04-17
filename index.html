@@ -47,16 +47,11 @@
       const img = document.getElementById("mainImage");
       const captionDiv = document.getElementById("caption");
 
-      img.src = url;
+      img.src = "https://images.weserv.nl/?url=" + encodeURIComponent(url.replace(/^https?:\/\//, ""));
       captionDiv.innerText = caption || "";
     }
 
     async function startSlideshow(fileUrl) {
-      // Automatically wrap with proxy unless already using it
-      if (!fileUrl.startsWith("https://api.allorigins.win/raw?url=")) {
-        fileUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(fileUrl);
-      }
-
       try {
         const response = await fetch(fileUrl);
         const text = await response.text();
