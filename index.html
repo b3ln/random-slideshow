@@ -36,7 +36,9 @@
     const images = [];
 
     async function scrapeGallery(galleryUrl) {
-      const res = await fetch(galleryUrl);
+      
+      const proxy = "https://cors-anywhere.herokuapp.com/"; // CORS workaround
+      const res = await fetch(proxy + galleryUrl);
       const html = await res.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
