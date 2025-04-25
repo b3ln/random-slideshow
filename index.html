@@ -43,9 +43,9 @@
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
 
-      const firstGrid = doc.querySelector('.img-grid');
+      const firstGrid = doc.querySelector('img-grid');
       if (!firstGrid) {
-        alert("No .img-grid found.");
+        alert("No img-grid found.");
         return;
       }
 
