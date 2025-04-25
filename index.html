@@ -39,19 +39,19 @@
       const index = Math.floor(Math.random() * images.length);
       const url = images[index];
       const img = document.getElementById("mainImage");
-      img.src = url:
+      img.src = url;
     }
 
     async function startSlideshow(fileUrl) {
       try {
         const response = await fetch(fileUrl);
         const text = await response.text();
-        const lines = text.split("\n").map(line => line.trim()).filter(line => line);
-        //const images = text.split("\n").map(line => line.trim()).filter(line => line);
+        //const lines = text.split("\n").map(line => line.trim()).filter(line => line);
+        const images = text.split("\n").map(line => line.trim()).filter(line => line);
 
-        for (let line of lines) {
-          images.push(line);
-        }
+        // for (let line of lines) {
+          // images.push(line);
+        // }
 
         if (images.length === 0) {
           alert("No valid images found in the file.");
