@@ -32,32 +32,9 @@
   </div>
 
   <script>
-    
     const images = [];
+    let interval;
 
-    async function scrapeGallery(galleryUrl) {
-      
-      const proxy = "https://corsproxy.io/?"; 
-      const res = await fetch(proxy + encodeURIComponent(galleryUrl));
-      const html = await res.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-
-      const firstGrid = doc.querySelector('.img-grid');
-      if (!firstGrid) {
-        console.log(html);
-        alert("No img-grid found.");
-        return;
-      }
-
-      images.length = 0; // Clear existing images
-      const thumbs = firstGrid.querySelectorAll('img[src*="thumb"]');
-      thumbs.forEach(img => {
-        let src = img.src.replace('thumb_', '');
-        images.push(src);
-      });
-    }
-    
     function changeImage() {
       const index = Math.floor(Math.random() * images.length);
       const url = images[index];
@@ -65,16 +42,17 @@
       img.src = url;
     }
 
-    let interval;
-
-    async function startSlideshow(galleryUrl) {
+    async function startSlideshow(fileUrl) {
       try {
-        await scrapeGallery(galleryUrl);
+        const response = await fetch(fileUrl);
+        const text = await response.text();
 
-        if (images.length === 0) {
-          alert("No valid images found in the file.");
-          return;
-        }
+        images.length = 0; // Clear it in case of re-use
+        images.push(...text
+          .split("\n")
+          .map(line => line.trim())
+          .filter(line => line));
+
         document.getElementById("imageDisplay").style.display = "flex";
         if (interval) clearInterval(interval);
         changeImage();
@@ -86,11 +64,11 @@
     }
 
     const params = new URLSearchParams(window.location.search);
-    const gallery = params.get("gallery");
-    if (gallery) {
-      startSlideshow(gallery);
+    const file = params.get("file");
+    if (file) {
+      startSlideshow(file);
     } else {
-      document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?gallery=URL parameter</h1>";
+      document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?file=URL parameter</h1>";
     }
   </script>
 </body>
