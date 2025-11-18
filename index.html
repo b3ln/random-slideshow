@@ -86,9 +86,6 @@
         const displayDiv = document.getElementById("imageDisplay");
         displayDiv.style.display = "flex";
 
-        // Display first image immediately
-        changeImage();
-
         if (interval) clearInterval(interval);
         changeImage();
         interval = setInterval(changeImage, 5000);
