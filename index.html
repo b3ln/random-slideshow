@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -37,11 +37,14 @@
 
     function changeImage() {
       const index = Math.floor(Math.random() * images.length);
-      const url = images[index];
       const img = document.getElementById("mainImage");
-      img.src = url;
+      img.style.opacity = 0;
+      setTimeout(() => {
+        img.src = images[index];
+        img.style.opacity = 1;
+      }, 300);
     }
-    
+
     async function fetchAlbumImages(albumUrl) {
       try {
         const response = await fetch(albumUrl);
