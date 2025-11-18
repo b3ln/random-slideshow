@@ -1,7 +1,7 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Random Image Slideshow</title>
   <style>
     html, body {
@@ -12,30 +12,38 @@
       overflow: hidden;
     }
     #imageDisplay {
-      display: flex;
+      display: none;
       justify-content: center;
       align-items: center;
       height: 100%;
       flex-direction: column;
-      color: white;
     }
     #mainImage {
       width: 100vw;
       height: 100vh;
       object-fit: contain;
+      transition: opacity 0.5s ease;
+      opacity: 0;
     }
   </style>
 </head>
 <body>
-  <div id="imageDisplay" style="display:none;">
-    <img id="mainImage" src="" alt="Slideshow Image">
+  <div id="imageDisplay">
+    <img id="mainImage" src="https://via.placeholder.com/600x400?text=Loading..." alt="Slideshow Image">
   </div>
 
   <script>
-    const images = [];
+    // Hardcoded images array
+    const images = [
+      "https://iili.io/fdq9F1f.jpg",
+      "https://iili.io/fdq2FZ7.webp"
+    ];
+
     let interval;
 
+    // Function to display a random image
     function changeImage() {
+      if (!images.length) return; // Safety check
       const index = Math.floor(Math.random() * images.length);
       const img = document.getElementById("mainImage");
       img.style.opacity = 0;
@@ -45,63 +53,26 @@
       }, 300);
     }
 
-    async function fetchAlbumImages(albumUrl) {
-      try {
-        const response = await fetch(albumUrl);
-        if (!response.ok) throw new Error("Failed to fetch album");
-        const html = await response.text();
-
-        // Create a DOM parser
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-
-        // Extract all FreeImage.host image URLs
-        const imgs = Array.from(doc.querySelectorAll("img"));
-        const images = imgs
-        .map(img => img.src)
-        .filter(src => src.includes("https://i.freeimage.host/"))
-        .map(src => src.replace("/thumbnails/", "/")); // full-size images
-
-        return images;
-      } catch (err) {
-        console.error(err);
-        return [];
+    // Start slideshow
+    function startSlideshow() {
+      if (!images.length) {
+        document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>No images to display!</h1>";
+        return;
       }
-    }
-    
-    async function startSlideshow(albumUrl) {
-      try {
-        //const images = await fetchAlbumImages(albumUrl);
-        //console.log("Found images:", images);
-        //if (!images.length) {
-        //  alert("No images found in the album or album is private.");
-        //  return;
-        //}
-        images = [
-          "https://iili.io/fdq9F1f.jpg",
-          "https://iili.io/fdq2FZ7.webp"
-        ];
-        
-        // Only show the container after images are ready
-        const displayDiv = document.getElementById("imageDisplay");
-        displayDiv.style.display = "flex";
 
-        if (interval) clearInterval(interval);
-        changeImage();
-        interval = setInterval(changeImage, 5000);
-      } catch (error) {
-        alert("Failed to load or parse the file.");
-        console.error("Error loading file:", error);
-      }
+      const displayDiv = document.getElementById("imageDisplay");
+      displayDiv.style.display = "flex";
+
+      // Show first image immediately
+      changeImage();
+
+      // Start the random slideshow every 5 seconds
+      if (interval) clearInterval(interval);
+      interval = setInterval(changeImage, 5000);
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const albumUrl = params.get("album");
-    if (albumUrl) {
-      startSlideshow(albumUrl);
-    } else {
-      document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?album=URL parameter</h1>";
-    }
+    // Run slideshow immediately on page load
+    startSlideshow();
   </script>
 </body>
 </html>
