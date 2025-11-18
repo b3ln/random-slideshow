@@ -68,6 +68,7 @@
     
     async function startSlideshow(albumUrl) {
       const images = await fetchAlbumImages(albumUrl);
+      console.log("Found images:", images);
       if (!images.length) {
         alert("No images found in the album or album is private.");
         return;
