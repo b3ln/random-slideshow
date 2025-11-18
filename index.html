@@ -67,19 +67,20 @@
     }
     
     async function startSlideshow(albumUrl) {
-      //const images = await fetchAlbumImages(albumUrl);
-      //console.log("Found images:", images);
-      //if (!images.length) {
-      //  alert("No images found in the album or album is private.");
-      //  return;
-      //}
-      const images = [
-        "https://iili.io/fdq9F1f.jpg",
-        "https://iili.io/fdq2FZ7.webp"
-      ];
+      try {
+        //const images = await fetchAlbumImages(albumUrl);
+        //console.log("Found images:", images);
+        //if (!images.length) {
+        //  alert("No images found in the album or album is private.");
+        //  return;
+        //}
+        const images = [
+          "https://iili.io/fdq9F1f.jpg",
+          "https://iili.io/fdq2FZ7.webp"
+        ];
         
-      document.getElementById("imageDisplay").style.display = "flex";
-      if (interval) clearInterval(interval);
+        document.getElementById("imageDisplay").style.display = "flex";
+        if (interval) clearInterval(interval);
         changeImage();
         interval = setInterval(changeImage, 5000);
       } catch (error) {
@@ -90,7 +91,7 @@
 
     const params = new URLSearchParams(window.location.search);
     const albumUrl = params.get("album");
-    if (file) {
+    if (albumUrl) {
       startSlideshow(albumUrl);
     } else {
       document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?album=URL parameter</h1>";
