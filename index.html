@@ -67,12 +67,17 @@
     }
     
     async function startSlideshow(albumUrl) {
-      const images = await fetchAlbumImages(albumUrl);
-      console.log("Found images:", images);
-      if (!images.length) {
-        alert("No images found in the album or album is private.");
-        return;
-      }
+      //const images = await fetchAlbumImages(albumUrl);
+      //console.log("Found images:", images);
+      //if (!images.length) {
+      //  alert("No images found in the album or album is private.");
+      //  return;
+      //}
+      const images = [
+        "https://iili.io/fdq9F1f.jpg",
+        "https://iili.io/fdq2FZ7.webp"
+      ];
+        
       document.getElementById("imageDisplay").style.display = "flex";
       if (interval) clearInterval(interval);
         changeImage();
