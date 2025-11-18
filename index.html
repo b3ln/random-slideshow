@@ -64,8 +64,7 @@
         const imgs = Array.from(doc.querySelectorAll("img"));
         const urls = imgs
           .map(img => img.src)
-          .filter(src => src.includes("https://iili.io/"))
-          .map(src => src.replace("/thumbnails/", "/")); // convert thumbnails to full-size
+          .filter(src => /\.(jpe?g|png|webp|gif)$/i.test(src));
 
         return urls;
       } catch (err) {
