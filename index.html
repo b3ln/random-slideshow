@@ -41,20 +41,39 @@
       const img = document.getElementById("mainImage");
       img.src = url;
     }
-
-    async function startSlideshow(fileUrl) {
+    
+    async function fetchAlbumImages(albumUrl) {
       try {
-        const response = await fetch(fileUrl);
-        const text = await response.text();
+        const response = await fetch(albumUrl);
+        if (!response.ok) throw new Error("Failed to fetch album");
+        const html = await response.text();
 
-        images.length = 0; // Clear it in case of re-use
-        images.push(...text
-          .split("\n")
-          .map(line => line.trim())
-          .filter(line => line));
+        // Create a DOM parser
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
 
-        document.getElementById("imageDisplay").style.display = "flex";
-        if (interval) clearInterval(interval);
+        // Extract all FreeImage.host image URLs
+        const imgs = Array.from(doc.querySelectorAll("img"));
+        const images = imgs
+        .map(img => img.src)
+        .filter(src => src.includes("https://i.freeimage.host/"))
+        .map(src => src.replace("/thumbnails/", "/")); // full-size images
+
+        return images;
+      } catch (err) {
+        console.error(err);
+        return [];
+      }
+    }
+    
+    async function startSlideshow(albumUrl) {
+      const images = await fetchAlbumImages(albumUrl);
+      if (!images.length) {
+        alert("No images found in the album or album is private.");
+        return;
+      }
+      document.getElementById("imageDisplay").style.display = "flex";
+      if (interval) clearInterval(interval);
         changeImage();
         interval = setInterval(changeImage, 5000);
       } catch (error) {
@@ -64,11 +83,11 @@
     }
 
     const params = new URLSearchParams(window.location.search);
-    const file = params.get("file");
+    const albumUrl = params.get("album");
     if (file) {
-      startSlideshow(file);
+      startSlideshow(albumUrl);
     } else {
-      document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?file=URL parameter</h1>";
+      document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?album=URL parameter</h1>";
     }
   </script>
 </body>
