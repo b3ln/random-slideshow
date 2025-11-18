@@ -64,7 +64,7 @@
         const imgs = Array.from(doc.querySelectorAll("img"));
         const urls = imgs
           .map(img => img.src)
-          .filter(src => src.includes("https://i.freeimage.host/"))
+          .filter(src => src.includes("https://iili.io/"))
           .map(src => src.replace("/thumbnails/", "/")); // convert thumbnails to full-size
 
         return urls;
