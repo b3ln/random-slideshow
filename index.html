@@ -33,17 +33,12 @@
   </div>
 
   <script>
-    // Hardcoded images array
-    const images = [
-      "https://iili.io/fdq9F1f.jpg",
-      "https://iili.io/fdq2FZ7.webp"
-    ];
-
+    let images = [];
     let interval;
 
     // Function to display a random image
     function changeImage() {
-      if (!images.length) return; // Safety check
+      if (!images.length) return;
       const index = Math.floor(Math.random() * images.length);
       const img = document.getElementById("mainImage");
       img.style.opacity = 0;
@@ -53,26 +48,59 @@
       }, 300);
     }
 
-    // Start slideshow
-    function startSlideshow() {
-      if (!images.length) {
-        document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>No images to display!</h1>";
-        return;
-      }
+    // Fetch album HTML via a free CORS proxy and parse image URLs
+    async function fetchAlbumImages(albumUrl) {
+      try {
+        const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(albumUrl);
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error("Failed to fetch album");
+        const data = await response.json();
+        const html = data.contents;
 
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        // Extract all FreeImage.host images
+        const imgs = Array.from(doc.querySelectorAll("img"));
+        const urls = imgs
+          .map(img => img.src)
+          .filter(src => src.includes("https://i.freeimage.host/"))
+          .map(src => src.replace("/thumbnails/", "/")); // convert thumbnails to full-size
+
+        return urls;
+      } catch (err) {
+        console.error("Error fetching album:", err);
+        return [];
+      }
+    }
+
+    async function startSlideshow(albumUrl) {
       const displayDiv = document.getElementById("imageDisplay");
       displayDiv.style.display = "flex";
 
-      // Show first image immediately
-      changeImage();
+      images = await fetchAlbumImages(albumUrl);
+      console.log("Found images:", images);
 
-      // Start the random slideshow every 5 seconds
+      if (!images.length) {
+        displayDiv.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>No images found or album is private.</h1>";
+        return;
+      }
+
+      // Display first image immediately
+      changeImage();
       if (interval) clearInterval(interval);
       interval = setInterval(changeImage, 5000);
     }
 
-    // Run slideshow immediately on page load
-    startSlideshow();
+    // Get album URL from query string
+    const params = new URLSearchParams(window.location.search);
+    const albumUrl = params.get("album");
+
+    if (albumUrl) {
+      startSlideshow(albumUrl);
+    } else {
+      document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?album=URL parameter</h1>";
+    }
   </script>
 </body>
 </html>
