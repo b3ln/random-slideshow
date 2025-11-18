@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Random Image Slideshow</title>
   <style>
     html, body {
@@ -12,93 +12,63 @@
       overflow: hidden;
     }
     #imageDisplay {
-      display: none;
+      display: flex;
       justify-content: center;
       align-items: center;
       height: 100%;
       flex-direction: column;
+      color: white;
     }
     #mainImage {
       width: 100vw;
       height: 100vh;
       object-fit: contain;
-      transition: opacity 0.5s ease;
-      opacity: 0;
     }
   </style>
 </head>
 <body>
-  <div id="imageDisplay">
-    <img id="mainImage" src="https://via.placeholder.com/600x400?text=Loading..." alt="Slideshow Image">
+  <div id="imageDisplay" style="display:none;">
+    <img id="mainImage" src="" alt="Slideshow Image">
   </div>
 
   <script>
-    let images = [];
+    const images = [];
     let interval;
 
-    // Function to display a random image
     function changeImage() {
-      if (!images.length) return;
       const index = Math.floor(Math.random() * images.length);
+      const url = images[index];
       const img = document.getElementById("mainImage");
-      img.style.opacity = 0;
-      setTimeout(() => {
-        img.src = images[index];
-        img.style.opacity = 1;
-      }, 300);
+      img.src = url;
     }
 
-    // Fetch album HTML via a free CORS proxy and parse image URLs
-    async function fetchAlbumImages(albumUrl) {
+    async function startSlideshow(fileUrl) {
       try {
-        const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(albumUrl);
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error("Failed to fetch album");
-        const data = await response.json();
-        const html = data.contents;
+        const response = await fetch(fileUrl);
+        const text = await response.text();
 
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
+        images.length = 0; // Clear it in case of re-use
+        images.push(...text
+          .split("\n")
+          .map(line => line.trim())
+          .filter(line => line));
 
-        // Extract all FreeImage.host images
-        const imgs = Array.from(doc.querySelectorAll("img"));
-        const urls = imgs
-          .map(img => img.src)
-          .filter(src => /\.(jpe?g|png|webp|gif)$/i.test(src));
-
-        return urls;
-      } catch (err) {
-        console.error("Error fetching album:", err);
-        return [];
+        document.getElementById("imageDisplay").style.display = "flex";
+        if (interval) clearInterval(interval);
+        changeImage();
+        interval = setInterval(changeImage, 5000);
+      } catch (error) {
+        alert("Failed to load or parse the file.");
+        console.error("Error loading file:", error);
       }
     }
 
-    async function startSlideshow(albumUrl) {
-      const displayDiv = document.getElementById("imageDisplay");
-      displayDiv.style.display = "flex";
-
-      images = await fetchAlbumImages(albumUrl);
-      console.log("Found images:", images);
-
-      if (!images.length) {
-        displayDiv.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>No images found or album is private.</h1>";
-        return;
-      }
-
-      // Display first image immediately
-      changeImage();
-      if (interval) clearInterval(interval);
-      interval = setInterval(changeImage, 5000);
-    }
-
-    // Get album URL from query string
     const params = new URLSearchParams(window.location.search);
-    const albumUrl = params.get("album");
-
-    if (albumUrl) {
-      startSlideshow(albumUrl);
+    const file = params.get("file");
+    if (file) {
+      startSlideshow(file);
     } else {
-      document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?album=URL parameter</h1>";
+      document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?file=URL parameter</h1>";
     }
   </script>
 </body>
