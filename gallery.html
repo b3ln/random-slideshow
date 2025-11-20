@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<title>Image Gallery</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -15,10 +16,25 @@
     }
 
     .gallery-img {
-        height: 150px; /* fixed height */
+        height: 150px;
         object-fit: cover;
         border-radius: 6px;
         background: #eee;
+    }
+
+    /* Broken-image placeholder */
+    .broken-placeholder {
+        height: 150px;
+        width: 150px;       /* forced square */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 2px dashed #999;
+        color: #444;
+        font-size: 20px;
+        border-radius: 6px;
+        background: #f5f5f5;
+        font-family: monospace;
     }
 </style>
 </head>
@@ -41,10 +57,19 @@ if (!txtFileUrl) {
             const urls = text.split(/\r?\n/).filter(line => line.trim().length > 0);
             const gallery = document.getElementById("gallery");
 
-            urls.forEach(url => {
+            urls.forEach((url, index) => {
                 const img = document.createElement("img");
                 img.src = url.trim();
                 img.className = "gallery-img";
+
+                // If image fails → replace with a numbered square frame
+                img.onerror = () => {
+                    const placeholder = document.createElement("div");
+                    placeholder.className = "broken-placeholder";
+                    placeholder.textContent = index + 1;  // line number (1-based)
+                    gallery.replaceChild(placeholder, img);
+                };
+
                 gallery.appendChild(img);
             });
         })
