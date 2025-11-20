@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Image Gallery</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+    }
+
+    #gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .gallery-img {
+        height: 150px; /* fixed height */
+        object-fit: cover;
+        border-radius: 6px;
+        background: #eee;
+    }
+</style>
+</head>
+<body>
+
+<h2>Image Gallery</h2>
+<div id="gallery"></div>
+
+<script>
+// Read the ?file= query parameter
+const params = new URLSearchParams(window.location.search);
+const txtFileUrl = params.get("file");
+
+if (!txtFileUrl) {
+    document.body.innerHTML = "<p style='color:red;'>Error: missing ?file= URL parameter.</p>";
+} else {
+    fetch(txtFileUrl)
+        .then(res => res.text())
+        .then(text => {
+            const urls = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+            const gallery = document.getElementById("gallery");
+
+            urls.forEach(url => {
+                const img = document.createElement("img");
+                img.src = url.trim();
+                img.className = "gallery-img";
+                gallery.appendChild(img);
+            });
+        })
+        .catch(err => {
+            document.body.innerHTML =
+                "<p style='color:red;'>Failed to load the file.<br>" + err + "</p>";
+        });
+}
+</script>
+
+</body>
+</html>
