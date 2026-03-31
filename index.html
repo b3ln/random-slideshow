@@ -21,7 +21,7 @@
     }
     #imageDisplay.paused {
       background: #1a1a1a; /* slightly lighter than black */
-      box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.12);
     }
     #mainImage {
       width: 100vw;
@@ -57,7 +57,7 @@
       } else {
         clearInterval(interval);
         isPaused = true;
-        display.classList.remove("paused");
+        display.classList.add("paused");
       }
     }
     
