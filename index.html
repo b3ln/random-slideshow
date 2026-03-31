@@ -34,6 +34,7 @@
   <script>
     const images = [];
     let interval;
+    let isPaused = false;
 
     function changeImage() {
       const index = Math.floor(Math.random() * images.length);
@@ -42,6 +43,16 @@
       img.src = url;
     }
 
+    function toggleSlideshow() {
+      if (isPaused) {
+        interval = setInterval(changeImage, 5000);
+        isPaused = false;
+      } else {
+        clearInterval(interval);
+        isPaused = true;
+      }
+    }
+    
     async function startSlideshow(fileUrl) {
       try {
         const response = await fetch(fileUrl);
@@ -54,6 +65,7 @@
           .filter(line => line));
 
         document.getElementById("imageDisplay").style.display = "flex";
+        document.getElementById("imageDisplay").onclick = toggleSlideshow;
         if (interval) clearInterval(interval);
         changeImage();
         interval = setInterval(changeImage, 5000);
