@@ -15,13 +15,21 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100%;
-      flex-direction: column;
-      color: white;
+      height: 100%;  
     }
-    #imageDisplay.paused {
-      background: #1a1a1a; /* slightly lighter than black */
-      box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.12);
+    #imageFrame {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #mainImage {
+      width: 100vw;
+      height: 100vh;
+      object-fit: contain;
+    }
+    #imageDisplay.paused #imageFrame {
+      padding: 10px;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
     }
     #mainImage {
       width: 100vw;
@@ -32,6 +40,72 @@
 </head>
 <body>
   <div id="imageDisplay" style="display:none;">
+    <div id="imageFrame">
+      <img id="mainImage" src="" alt="Slideshow Image">
+    </div>
+  </div>
+
+  <script>
+    const images = [];
+    let interval;
+    let isPaused = false;
+
+    function changeImage() {
+      const index = Math.floor(Math.random() * images.length);
+      const url = images[index];
+      const img = document.getElementById("mainImage");
+      img.src = url;
+    }
+
+    function toggleSlideshow() {  
+      const display = document.getElementById("imageDisplay");
+      if (isPaused) {
+        changeImage(); 
+        interval = setInterval(changeImage, 5000);
+        isPaused = false;
+        display.classList.remove("paused");
+      } else {
+        clearInterval(interval);
+        isPaused = true;
+        display.classList.remove("paused");
+      }
+    }
+    
+    async function startSlideshow(fileUrl) {
+      try {
+        const response = await fetch(fileUrl);
+        const text = await response.text();
+
+        images.length = 0; // Clear it in case of re-use
+        images.push(...text
+          .split("\n")
+          .map(line => line.trim())
+          .filter(line => line));
+
+        document.getElementById("imageDisplay").style.display = "flex";
+        document.getElementById("imageDisplay").onclick = toggleSlideshow;
+        if (interval) clearInterval(interval);
+        changeImage();
+        interval = setInterval(changeImage, 5000);
+      } catch (error) {
+        alert("Failed to load or parse the file.");
+        console.error("Error loading file:", error);
+      }
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const file = params.get("file");
+    if (file) {
+      const fileName = decodeURIComponent(file.split('/').pop());
+      document.title = `Slideshow ${fileName}`;
+      startSlideshow(file);
+    } else {
+      document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?file=URL parameter</h1>";
+    }
+  </script>
+</body>
+</html>
+
     <img id="mainImage" src="" alt="Slideshow Image">
   </div>
 
