@@ -18,39 +18,21 @@
       height: 100%;
       flex-direction: column;
       color: white;
-      position: relative;
     }
     #mainImage {
-      max-width: 100vw;
-      max-height: 100vh;
-      width: auto;
-      height: auto;
+      width: 100vw;
+      height: 100vh;
       object-fit: contain;
-      display: block;
-    }
-    #pauseIndicator {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      padding: 6px 10px;
-      background: rgba(0, 0, 0, 0.6);
-      color: white;
-      font-size: 16px;
-      border-radius: 6px;
-      display: none;
-      z-index: 10;
     }
   </style>
 </head>
 <body>
   <div id="imageDisplay" style="display:none;">
     <img id="mainImage" src="" alt="Slideshow Image">
-    <div id="pauseIndicator">⏸</div>
   </div>
 
   <script>
     const images = [];
-    const indicator = document.getElementById("pauseIndicator");
     let interval;
     let isPaused = false;
 
@@ -66,11 +48,9 @@
         changeImage();
         interval = setInterval(changeImage, 5000);
         isPaused = false;
-        indicator.style.display = "none";
       } else {
         clearInterval(interval);
         isPaused = true;
-        indicator.style.display = "block";
       }
     }
     
