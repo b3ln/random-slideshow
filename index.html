@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Random Image Slideshow</title>
+  <title>Slideshow</title>
   <style>
     html, body {
       margin: 0;
@@ -66,6 +66,8 @@
     const params = new URLSearchParams(window.location.search);
     const file = params.get("file");
     if (file) {
+      const fileName = decodeURIComponent(file.split('/').pop());
+      document.title = `Slideshow ${fileName}`;
       startSlideshow(file);
     } else {
       document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?file=URL parameter</h1>";
