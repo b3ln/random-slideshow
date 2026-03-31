@@ -18,6 +18,8 @@
       height: 100%;
       flex-direction: column;
       color: white;
+      position: relative;
+    }
     }
     #mainImage {
       width: 100vw;
@@ -46,6 +48,7 @@
 
   <script>
     const images = [];
+    const indicator = document.getElementById("pauseIndicator");
     let interval;
     let isPaused = false;
 
