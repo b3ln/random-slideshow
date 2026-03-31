@@ -53,6 +53,9 @@ const txtFileUrl = params.get("file");
 // Track current image index
 let currentIndex = 0;
 let imageElements = [];
+//Add touch tracking variables
+let touchStartX = 0;
+let touchEndX = 0;
 
 if (!txtFileUrl) {
     document.body.innerHTML = "<p style='color:red;'>Error: missing ?file= URL parameter.</p>";
@@ -140,6 +143,32 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "ArrowLeft") showPrev();
 });
 
+const viewer = document.getElementById("fullscreenViewer");
+
+viewer.addEventListener("touchstart", (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+});
+
+viewer.addEventListener("touchend", (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+});
+
+function handleSwipe() {
+    const threshold = 50; // minimum swipe distance
+
+    const diff = touchEndX - touchStartX;
+
+    if (Math.abs(diff) < threshold) return;
+
+    if (diff < 0) {
+        // swipe left → next
+        showNext();
+    } else {
+        // swipe right → previous
+        showPrev();
+    }
+}
     
 </script>
 
