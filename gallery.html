@@ -23,7 +23,7 @@
 
     /* Broken-image placeholder */
     .broken-placeholder {
-        height: 150px;
+        height: 150px; 
         width: 150px;       /* forced square */
         display: flex;
         justify-content: center;
@@ -39,7 +39,7 @@
 </head>
 <body>
 
-<h2>Image Gallery</h2>
+<h2 id="title">Image Gallery</h2>
 <div id="gallery"></div>
 
 <script>
@@ -50,6 +50,9 @@ const txtFileUrl = params.get("file");
 if (!txtFileUrl) {
     document.body.innerHTML = "<p style='color:red;'>Error: missing ?file= URL parameter.</p>";
 } else {
+    const fileName = decodeURIComponent(txtFileUrl.split('/').pop());
+    document.title = fileName;
+    document.getElementById("title").textContent = fileName;
     fetch(txtFileUrl)
         .then(res => res.text())
         .then(text => {
