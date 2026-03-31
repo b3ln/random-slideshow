@@ -101,12 +101,22 @@ function openFullscreen() {
     const viewer = document.getElementById("fullscreenViewer");
     const viewerImg = document.getElementById("fullscreenImage");
 
+    // Hide gallery + title
+    document.getElementById("gallery").style.display = "none";
+    document.getElementById("title").style.display = "none";
+
     viewerImg.src = imageElements[currentIndex].src;
     viewer.style.display = "flex";
+    document.body.style.margin = "0";
 }
 
 function closeFullscreen() {
     document.getElementById("fullscreenViewer").style.display = "none";
+    
+    // Show gallery + title again
+    document.getElementById("gallery").style.display = "flex";
+    document.getElementById("title").style.display = "block";
+    document.body.style.margin = "20px";
 }
 
 function showNext() {
