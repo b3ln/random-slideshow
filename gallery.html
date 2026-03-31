@@ -51,8 +51,8 @@ if (!txtFileUrl) {
     document.body.innerHTML = "<p style='color:red;'>Error: missing ?file= URL parameter.</p>";
 } else {
     const fileName = decodeURIComponent(txtFileUrl.split('/').pop());
-    document.title = fileName;
-    document.getElementById("title").textContent = fileName;
+    document.title = "Gallery from " + fileName;
+    document.getElementById("title").textContent = "Gallery from " + fileName;
     fetch(txtFileUrl)
         .then(res => res.text())
         .then(text => {
