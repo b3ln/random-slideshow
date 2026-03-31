@@ -42,10 +42,17 @@
 <h2 id="title">Gallery</h2>
 <div id="gallery"></div>
 
+<div id="fullscreenViewer" style="display:none;">
+    <img id="fullscreenImage">
+</div>
+    
 <script>
 // Read the ?file= query parameter
 const params = new URLSearchParams(window.location.search);
 const txtFileUrl = params.get("file");
+// Track current image index
+let currentIndex = 0;
+let imageElements = [];
 
 if (!txtFileUrl) {
     document.body.innerHTML = "<p style='color:red;'>Error: missing ?file= URL parameter.</p>";
@@ -64,6 +71,13 @@ if (!txtFileUrl) {
                 img.src = url.trim();
                 img.className = "gallery-img";
 
+                // Store images and add click handler
+                imageElements.push(img);
+                img.onclick = () => {
+                    currentIndex = index;
+                    openFullscreen();
+                };
+
                 // If image fails → replace with a numbered square frame
                 img.onerror = () => {
                     const placeholder = document.createElement("div");
@@ -75,11 +89,48 @@ if (!txtFileUrl) {
                 gallery.appendChild(img);
             });
         })
+
         .catch(err => {
             document.body.innerHTML =
                 "<p style='color:red;'>Failed to load the file.<br>" + err + "</p>";
         });
 }
+
+
+function openFullscreen() {
+    const viewer = document.getElementById("fullscreenViewer");
+    const viewerImg = document.getElementById("fullscreenImage");
+
+    viewerImg.src = imageElements[currentIndex].src;
+    viewer.style.display = "flex";
+}
+
+function closeFullscreen() {
+    document.getElementById("fullscreenViewer").style.display = "none";
+}
+
+function showNext() {
+    currentIndex = (currentIndex + 1) % imageElements.length;
+    openFullscreen();
+}
+
+function showPrev() {
+    currentIndex = (currentIndex - 1 + imageElements.length) % imageElements.length;
+    openFullscreen();
+}
+
+document.getElementById("fullscreenViewer").onclick = closeFullscreen;
+
+document.addEventListener("keydown", (e) => {
+    const viewerVisible = document.getElementById("fullscreenViewer").style.display === "flex";
+    if (!viewerVisible) return;
+
+    if (e.key === "Escape") closeFullscreen();
+    if (e.key === "ArrowRight") showNext();
+    if (e.key === "ArrowLeft") showPrev();
+});
+
+    
 </script>
 
 </body>
