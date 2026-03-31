@@ -1,97 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Slideshow</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: black;
-      height: 100%;
-      overflow: hidden;
-    }
-    #imageDisplay {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      flex-direction: column;
-      color: white;
-    }
-    #imageDisplay.paused {
-      background: #1a1a1a; /* slightly lighter than black */
-      box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.08);
-    }
-    #mainImage {
-      width: 100vw;
-      height: 100vh;
-      object-fit: contain;
-    }
-  </style>
-</head>
-<body>
-  <div id="imageDisplay" style="display:none;">
-    <img id="mainImage" src="" alt="Slideshow Image">
-  </div>
-
-  <script>
-    const images = [];
-    let interval;
-    let isPaused = false;
-
-    function changeImage() {
-      const index = Math.floor(Math.random() * images.length);
-      const url = images[index];
-      const img = document.getElementById("mainImage");
-      img.src = url;
+<meta charset="UTF-8">
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
     }
 
-    function toggleSlideshow() {  
-      const display = document.getElementById("imageDisplay");
-      if (isPaused) {
-        changeImage(); 
-        interval = setInterval(changeImage, 5000);
-        isPaused = false;
-        display.classList.remove("paused");
-      } else {
-        clearInterval(interval);
-        isPaused = true;
-        display.classList.remove("paused");
-      }
+    #gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .gallery-img {
+        height: 150px;
+        object-fit: cover;
+        border-radius: 6px;
+        background: #eee;
+    }
+
+    .broken-placeholder {
+        height: 150px; 
+        width: 150px;       /* forced square */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 2px dashed #999;
+        color: #444;
+        font-size: 20px;
+        border-radius: 6px;
+        background: #f5f5f5;
+        font-family: monospace;
     }
     
-    async function startSlideshow(fileUrl) {
-      try {
-        const response = await fetch(fileUrl);
-        const text = await response.text();
-
-        images.length = 0; // Clear it in case of re-use
-        images.push(...text
-          .split("\n")
-          .map(line => line.trim())
-          .filter(line => line));
-
-        document.getElementById("imageDisplay").style.display = "flex";
-        document.getElementById("imageDisplay").onclick = toggleSlideshow;
-        if (interval) clearInterval(interval);
-        changeImage();
-        interval = setInterval(changeImage, 5000);
-      } catch (error) {
-        alert("Failed to load or parse the file.");
-        console.error("Error loading file:", error);
-      }
+    #fullscreenViewer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const file = params.get("file");
-    if (file) {
-      const fileName = decodeURIComponent(file.split('/').pop());
-      document.title = `Slideshow ${fileName}`;
-      startSlideshow(file);
+    #fullscreenViewer img {
+        width: 100vw;
+        height: 100vh;
+        object-fit: contain; 
+    }
+    
+</style>
+</head>
+<body>
+
+<h2 id="title">Gallery</h2>
+<div id="gallery"></div>
+
+<div id="fullscreenViewer" style="display:none;">
+    <img id="fullscreenImage">
+</div>
+    
+<script>
+// Read the ?file= query parameter
+const params = new URLSearchParams(window.location.search);
+const txtFileUrl = params.get("file");
+// Track current image index
+let currentIndex = 0;
+let imageElements = [];
+//Add touch tracking variables
+let touchStartX = 0;
+let touchEndX = 0;
+
+if (!txtFileUrl) {
+    document.body.innerHTML = "<p style='color:red;'>Error: missing ?file= URL parameter.</p>";
+} else {
+    const fileName = decodeURIComponent(txtFileUrl.split('/').pop());
+    document.title = "Gallery " + fileName;
+    document.getElementById("title").textContent = "Gallery " + fileName;
+    fetch(txtFileUrl)
+        .then(res => res.text())
+        .then(text => {
+            const urls = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+            const gallery = document.getElementById("gallery");
+
+            urls.forEach((url, index) => {
+                const img = document.createElement("img");
+                img.src = url.trim();
+                img.className = "gallery-img";
+
+                // Store images and add click handler
+                imageElements.push(img);
+                img.onclick = () => {
+                    currentIndex = index;
+                    openFullscreen();
+                };
+
+                // If image fails → replace with a numbered square frame
+                img.onerror = () => {
+                    const placeholder = document.createElement("div");
+                    placeholder.className = "broken-placeholder";
+                    placeholder.textContent = index + 1;  // line number (1-based)
+                    gallery.replaceChild(placeholder, img);
+                };
+
+                gallery.appendChild(img);
+            });
+        })
+
+        .catch(err => {
+            document.body.innerHTML =
+                "<p style='color:red;'>Failed to load the file.<br>" + err + "</p>";
+        });
+}
+
+
+function openFullscreen() {
+    const viewer = document.getElementById("fullscreenViewer");
+    const viewerImg = document.getElementById("fullscreenImage");
+
+    // Hide gallery + title
+    document.getElementById("gallery").style.display = "none";
+    document.getElementById("title").style.display = "none";
+
+    viewerImg.src = imageElements[currentIndex].src;
+    viewer.style.display = "flex";
+    document.body.style.margin = "0";
+}
+
+function closeFullscreen() {
+    document.getElementById("fullscreenViewer").style.display = "none";
+    
+    // Show gallery + title again
+    document.getElementById("gallery").style.display = "flex";
+    document.getElementById("title").style.display = "block";
+    document.body.style.margin = "20px";
+}
+
+function showNext() {
+    currentIndex = (currentIndex + 1) % imageElements.length;
+    openFullscreen();
+}
+
+function showPrev() {
+    currentIndex = (currentIndex - 1 + imageElements.length) % imageElements.length;
+    openFullscreen();
+}
+
+document.getElementById("fullscreenViewer").onclick = closeFullscreen;
+
+document.addEventListener("keydown", (e) => {
+    const viewerVisible = document.getElementById("fullscreenViewer").style.display === "flex";
+    if (!viewerVisible) return;
+
+    if (e.key === "Escape") closeFullscreen();
+    if (e.key === "ArrowRight") showNext();
+    if (e.key === "ArrowLeft") showPrev();
+});
+
+const viewer = document.getElementById("fullscreenViewer");
+
+viewer.addEventListener("touchstart", (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+});
+
+viewer.addEventListener("touchend", (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+});
+
+function handleSwipe() {
+    const threshold = 50; // minimum swipe distance
+
+    const diff = touchEndX - touchStartX;
+
+    if (Math.abs(diff) < threshold) return;
+
+    if (diff < 0) {
+        // swipe left → next
+        showNext();
     } else {
-      document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?file=URL parameter</h1>";
+        // swipe right → previous
+        showPrev();
     }
-  </script>
+}
+    
+</script>
+
 </body>
 </html>
