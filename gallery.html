@@ -104,6 +104,11 @@ if (!txtFileUrl) {
         .then(res => res.text())
         .then(text => {
 
+            // DEBUG
+            console.log("RAW RESPONSE START:");
+            console.log(text.slice(0, 500));
+            console.log("RAW RESPONSE END");
+            
             const gallery = document.getElementById("gallery");
 
             imageElements = [];
