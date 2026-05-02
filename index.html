@@ -11,6 +11,7 @@
       height: 100%;
       overflow: hidden;
     }
+
     #imageDisplay {
       display: flex;
       justify-content: center;
@@ -18,56 +19,111 @@
       height: 100%;
       flex-direction: column;
       color: white;
+      position: relative;
     }
+
     #mainImage {
       width: 100vw;
       height: 100vh;
       object-fit: contain;
+    }
+
+    #titleOverlay {
+      position: absolute;
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 1.5rem;
+      color: white;
+      display: none;
+      max-width: 80%;
+      text-align: center;
     }
   </style>
 </head>
 <body>
   <div id="imageDisplay" style="display:none;">
     <img id="mainImage" src="" alt="Slideshow Image">
+    <div id="titleOverlay"></div>
   </div>
 
   <script>
-    const images = [];
+    const images = []; // { url, title }
     let interval;
     let isPaused = false;
+    let currentImage = null;
 
     function changeImage() {
+      if (images.length === 0) return;
+
       const index = Math.floor(Math.random() * images.length);
-      const url = images[index];
+      currentImage = images[index];
+
       const img = document.getElementById("mainImage");
-      img.src = url;
+      const overlay = document.getElementById("titleOverlay");
+
+      img.src = currentImage.url;
+
+      // Hide title during slideshow
+      overlay.style.display = "none";
     }
 
     function toggleSlideshow() {
+      const overlay = document.getElementById("titleOverlay");
+
       if (isPaused) {
         changeImage();
         interval = setInterval(changeImage, 5000);
+        overlay.style.display = "none";
         isPaused = false;
       } else {
         clearInterval(interval);
         isPaused = true;
+
+        // Show title if available
+        if (currentImage && currentImage.title) {
+          overlay.textContent = currentImage.title;
+          overlay.style.display = "block";
+        } else {
+          overlay.style.display = "none";
+        }
       }
     }
-    
+
     async function startSlideshow(fileUrl) {
       try {
         const response = await fetch(fileUrl);
         const text = await response.text();
 
-        images.length = 0; // Clear it in case of re-use
-        images.push(...text
+        images.length = 0;
+
+        const lines = text
           .split("\n")
           .map(line => line.trim())
-          .filter(line => line));
+          .filter(line => line);
+
+        let pendingTitle = null;
+
+        for (const line of lines) {
+          if (line.startsWith("#")) {
+            pendingTitle = line.substring(1).trim();
+          } else {
+            images.push({
+              url: line,
+              title: pendingTitle
+            });
+            pendingTitle = null;
+          }
+        }
 
         document.getElementById("imageDisplay").style.display = "flex";
         document.getElementById("imageDisplay").onclick = toggleSlideshow;
+
         if (interval) clearInterval(interval);
+
         changeImage();
         interval = setInterval(changeImage, 5000);
       } catch (error) {
@@ -78,12 +134,14 @@
 
     const params = new URLSearchParams(window.location.search);
     const file = params.get("file");
+
     if (file) {
       const fileName = decodeURIComponent(file.split('/').pop());
       document.title = `Slideshow ${fileName}`;
       startSlideshow(file);
     } else {
-      document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?file=URL parameter</h1>";
+      document.body.innerHTML =
+        "<h1 style='color:white; text-align:center; margin-top:20%;'>Missing ?file=URL parameter</h1>";
     }
   </script>
 </body>
