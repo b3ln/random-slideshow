@@ -23,7 +23,7 @@
 
     .broken-placeholder {
         height: 150px; 
-        width: 150px;       /* forced square */
+        width: 150px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -45,6 +45,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        flex-direction: column;
         z-index: 9999;
     }
 
@@ -53,7 +54,21 @@
         height: 100vh;
         object-fit: contain; 
     }
-    
+
+    #imageTitleOverlay {
+        position: absolute;
+        bottom: 5%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.6);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 1.4rem;
+        max-width: 80%;
+        text-align: center;
+        display: none;
+    }
 </style>
 </head>
 <body>
@@ -63,16 +78,17 @@
 
 <div id="fullscreenViewer" style="display:none;">
     <img id="fullscreenImage">
+    <div id="imageTitleOverlay"></div>
 </div>
     
 <script>
-// Read the ?file= query parameter
 const params = new URLSearchParams(window.location.search);
 const txtFileUrl = params.get("file");
-// Track current image index
+
 let currentIndex = 0;
 let imageElements = [];
-//Add touch tracking variables
+let imageData = [];
+
 let touchStartX = 0;
 let touchEndX = 0;
 
@@ -82,72 +98,96 @@ if (!txtFileUrl) {
     const fileName = decodeURIComponent(txtFileUrl.split('/').pop());
     document.title = "Gallery " + fileName;
     document.getElementById("title").textContent = "Gallery " + fileName;
+
     fetch(txtFileUrl)
         .then(res => res.text())
         .then(text => {
-            const urls = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+            const lines = text.split(/\r?\n/);
+
+            let pendingTitle = null;
             const gallery = document.getElementById("gallery");
 
-            urls.forEach((url, index) => {
+            lines.forEach((rawLine, index) => {
+                const line = rawLine.trim();
+                if (!line) return;
+
+                if (line.startsWith("#")) {
+                    pendingTitle = line.substring(1).trim();
+                    return;
+                }
+
+                const item = {
+                    url: line,
+                    title: pendingTitle
+                };
+                pendingTitle = null;
+
                 const img = document.createElement("img");
-                img.src = url.trim();
+                img.src = item.url;
                 img.className = "gallery-img";
 
-                // Store images and add click handler
                 imageElements.push(img);
+                imageData.push(item);
+
+                const imgIndex = imageElements.length - 1;
+
                 img.onclick = () => {
-                    currentIndex = index;
+                    currentIndex = imgIndex;
                     openFullscreen();
                 };
 
-                // If image fails → replace with a numbered square frame
                 img.onerror = () => {
                     const placeholder = document.createElement("div");
                     placeholder.className = "broken-placeholder";
-                    placeholder.textContent = index + 1;  // line number (1-based)
+                    placeholder.textContent = imgIndex + 1;
                     gallery.replaceChild(placeholder, img);
                 };
 
                 gallery.appendChild(img);
             });
         })
-
         .catch(err => {
             document.body.innerHTML =
                 "<p style='color:red;'>Failed to load the file.<br>" + err + "</p>";
         });
 }
 
-
 function openFullscreen() {
     const viewer = document.getElementById("fullscreenViewer");
     const viewerImg = document.getElementById("fullscreenImage");
+    const overlay = document.getElementById("imageTitleOverlay");
 
-    // Hide gallery + title
     document.getElementById("gallery").style.display = "none";
     document.getElementById("title").style.display = "none";
 
-    viewerImg.src = imageElements[currentIndex].src;
+    viewerImg.src = imageData[currentIndex].url;
+
+    const title = imageData[currentIndex].title;
+    if (title) {
+        overlay.textContent = title;
+        overlay.style.display = "block";
+    } else {
+        overlay.style.display = "none";
+    }
+
     viewer.style.display = "flex";
     document.body.style.margin = "0";
 }
 
 function closeFullscreen() {
     document.getElementById("fullscreenViewer").style.display = "none";
-    
-    // Show gallery + title again
     document.getElementById("gallery").style.display = "flex";
     document.getElementById("title").style.display = "block";
     document.body.style.margin = "20px";
 }
 
 function showNext() {
-    currentIndex = (currentIndex + 1) % imageElements.length;
+    currentIndex = (currentIndex + 1) % imageData.length;
     openFullscreen();
 }
 
 function showPrev() {
-    currentIndex = (currentIndex - 1 + imageElements.length) % imageElements.length;
+    currentIndex = (currentIndex - 1 + imageData.length) % imageData.length;
     openFullscreen();
 }
 
@@ -174,21 +214,17 @@ viewer.addEventListener("touchend", (e) => {
 });
 
 function handleSwipe() {
-    const threshold = 50; // minimum swipe distance
-
+    const threshold = 50;
     const diff = touchEndX - touchStartX;
 
     if (Math.abs(diff) < threshold) return;
 
     if (diff < 0) {
-        // swipe left → next
         showNext();
     } else {
-        // swipe right → previous
         showPrev();
     }
 }
-    
 </script>
 
 </body>
