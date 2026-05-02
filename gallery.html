@@ -95,6 +95,7 @@ let touchEndX = 0;
 if (!txtFileUrl) {
     document.body.innerHTML = "<p style='color:red;'>Error: missing ?file= URL parameter.</p>";
 } else {
+
     const fileName = decodeURIComponent(txtFileUrl.split('/').pop());
     document.title = "Gallery " + fileName;
     document.getElementById("title").textContent = "Gallery " + fileName;
@@ -103,13 +104,20 @@ if (!txtFileUrl) {
         .then(res => res.text())
         .then(text => {
 
-            // 🔥 FIX: robust newline handling
-            const lines = text.split(/\r\n|\r|\n/);
-
-            let pendingTitle = null;
             const gallery = document.getElementById("gallery");
 
+            imageElements = [];
+            imageData = [];
+
+            let pendingTitle = null;
+
+            // 🔥 HARD NORMALIZATION (fixes ALL newline + streaming weirdness)
+            text = text.replace(/\r/g, "\n");
+
+            const lines = text.split("\n").filter(l => l.trim() !== "");
+
             lines.forEach((rawLine) => {
+
                 const line = rawLine.trim();
                 if (!line) return;
 
