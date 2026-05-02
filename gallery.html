@@ -34,7 +34,7 @@
         background: #f5f5f5;
         font-family: monospace;
     }
-    
+
     #fullscreenViewer {
         position: fixed;
         top: 0;
@@ -52,7 +52,7 @@
     #fullscreenViewer img {
         width: 100vw;
         height: 100vh;
-        object-fit: contain; 
+        object-fit: contain;
     }
 
     #imageTitleOverlay {
@@ -80,7 +80,7 @@
     <img id="fullscreenImage">
     <div id="imageTitleOverlay"></div>
 </div>
-    
+
 <script>
 const params = new URLSearchParams(window.location.search);
 const txtFileUrl = params.get("file");
@@ -102,12 +102,14 @@ if (!txtFileUrl) {
     fetch(txtFileUrl)
         .then(res => res.text())
         .then(text => {
-            const lines = text.split(/\r?\n/);
+
+            // 🔥 FIX: robust newline handling
+            const lines = text.split(/\r\n|\r|\n/);
 
             let pendingTitle = null;
             const gallery = document.getElementById("gallery");
 
-            lines.forEach((rawLine, index) => {
+            lines.forEach((rawLine) => {
                 const line = rawLine.trim();
                 if (!line) return;
 
@@ -126,10 +128,10 @@ if (!txtFileUrl) {
                 img.src = item.url;
                 img.className = "gallery-img";
 
+                const imgIndex = imageElements.length;
+
                 imageElements.push(img);
                 imageData.push(item);
-
-                const imgIndex = imageElements.length - 1;
 
                 img.onclick = () => {
                     currentIndex = imgIndex;
@@ -160,11 +162,12 @@ function openFullscreen() {
     document.getElementById("gallery").style.display = "none";
     document.getElementById("title").style.display = "none";
 
-    viewerImg.src = imageData[currentIndex].url;
+    const current = imageData[currentIndex];
 
-    const title = imageData[currentIndex].title;
-    if (title) {
-        overlay.textContent = title;
+    viewerImg.src = current.url;
+
+    if (current.title) {
+        overlay.textContent = current.title;
         overlay.style.display = "block";
     } else {
         overlay.style.display = "none";
