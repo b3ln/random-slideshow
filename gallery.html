@@ -2,86 +2,143 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-    }
 
-    #gallery {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
 
-    .gallery-img {
-        height: 150px;
-        object-fit: cover;
-        border-radius: 6px;
-        background: #eee;
-    }
+#gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
 
-    .broken-placeholder {
-        height: 150px; 
-        width: 150px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border: 2px dashed #999;
-        color: #444;
-        font-size: 20px;
-        border-radius: 6px;
-        background: #f5f5f5;
-        font-family: monospace;
-    }
+.gallery-item {
+    position: relative;
+    cursor: pointer;
+}
 
-    #fullscreenViewer {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: black;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        z-index: 9999;
-    }
+.gallery-img {
+    height: 150px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #eee;
+}
 
-    #fullscreenViewer img {
-        width: 100vw;
-        height: 100vh;
-        object-fit: contain;
-    }
+.video-indicator {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    pointer-events: none;
+}
 
-    #imageTitleOverlay {
-        position: absolute;
-        bottom: 5%;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,0,0,0.6);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-size: 1.4rem;
-        max-width: 80%;
-        text-align: center;
-        display: none;
-    }
+.broken-placeholder {
+    height: 150px;
+    width: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px dashed #999;
+    color: #444;
+    font-size: 20px;
+    border-radius: 6px;
+    background: #f5f5f5;
+    font-family: monospace;
+}
+
+#fullscreenViewer {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: black;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 9999;
+}
+
+#fullscreenImage,
+#fullscreenVideo {
+    width: 100vw;
+    height: 100vh;
+    object-fit: contain;
+    background: black;
+}
+
+#fullscreenVideo {
+    display: none;
+}
+
+#imageTitleOverlay {
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1.4rem;
+    max-width: 80%;
+    text-align: center;
+    display: none;
+}
+
+#closeBtn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10001;
+    font-size: 28px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+}
+
 </style>
 </head>
+
 <body>
 
 <h2 id="title">Gallery</h2>
+
 <div id="gallery"></div>
 
-<div id="fullscreenViewer" style="display:none;">
+<div id="fullscreenViewer">
+
+    <button id="closeBtn">✕</button>
+
     <img id="fullscreenImage">
+
+    <video
+        id="fullscreenVideo"
+        controls
+        playsinline
+    ></video>
+
     <div id="imageTitleOverlay"></div>
+
 </div>
 
 <script>
+
 const params = new URLSearchParams(window.location.search);
 const txtFileUrl = params.get("file");
 
@@ -92,23 +149,36 @@ let imageData = [];
 let touchStartX = 0;
 let touchEndX = 0;
 
+function isVideo(url) {
+    return /\.(mp4|webm|ogg|mov)$/i.test(url);
+}
+
 if (!txtFileUrl) {
-    document.body.innerHTML = "<p style='color:red;'>Error: missing ?file= URL parameter.</p>";
+
+    document.body.innerHTML =
+        "<p style='color:red;'>Error: missing ?file= URL parameter.</p>";
+
 } else {
 
-    const fileName = decodeURIComponent(txtFileUrl.split('/').pop());
+    const fileName = decodeURIComponent(
+        txtFileUrl.split('/').pop()
+    );
+
     document.title = "Gallery " + fileName;
-    document.getElementById("title").textContent = "Gallery " + fileName;
+
+    document.getElementById("title").textContent =
+        "Gallery " + fileName;
 
     fetch(txtFileUrl)
+
         .then(res => res.text())
+
         .then(text => {
 
-            // DEBUG
             console.log("RAW RESPONSE START:");
             console.log(text.slice(0, 500));
             console.log("RAW RESPONSE END");
-            
+
             const gallery = document.getElementById("gallery");
 
             imageElements = [];
@@ -116,131 +186,340 @@ if (!txtFileUrl) {
 
             let pendingTitle = null;
 
-            // 🔥 HARD NORMALIZATION (fixes ALL newline + streaming weirdness)
             text = text.replace(/\r/g, "\n");
 
-            const lines = text.split("\n").filter(l => l.trim() !== "");
+            const lines = text
+                .split("\n")
+                .filter(l => l.trim() !== "");
 
             lines.forEach((rawLine) => {
 
                 const line = rawLine.trim();
+
                 if (!line) return;
 
+                // TITLE
                 if (line.startsWith("#")) {
-                    pendingTitle = line.substring(1).trim();
+
+                    pendingTitle =
+                        line.substring(1).trim();
+
                     return;
                 }
 
                 const item = {
                     url: line,
-                    title: pendingTitle
+                    title: pendingTitle,
+                    type: isVideo(line)
+                        ? "video"
+                        : "image"
                 };
+
                 pendingTitle = null;
 
-                const img = document.createElement("img");
-                img.src = item.url;
+                const wrapper =
+                    document.createElement("div");
+
+                wrapper.className = "gallery-item";
+
+                const img =
+                    document.createElement("img");
+
                 img.className = "gallery-img";
 
-                const imgIndex = imageElements.length;
+                // VIDEO
+                if (item.type === "video") {
 
-                imageElements.push(img);
+                    const video =
+                        document.createElement("video");
+
+                    video.src = item.url;
+                    video.muted = true;
+                    video.playsInline = true;
+
+                    video.addEventListener(
+                        "loadeddata",
+                        () => {
+
+                            try {
+                                video.currentTime = 1;
+                            } catch(e) {}
+                        }
+                    );
+
+                    video.addEventListener(
+                        "seeked",
+                        () => {
+
+                            const canvas =
+                                document.createElement("canvas");
+
+                            canvas.width =
+                                video.videoWidth || 320;
+
+                            canvas.height =
+                                video.videoHeight || 180;
+
+                            const ctx =
+                                canvas.getContext("2d");
+
+                            ctx.drawImage(
+                                video,
+                                0,
+                                0,
+                                canvas.width,
+                                canvas.height
+                            );
+
+                            img.src =
+                                canvas.toDataURL();
+                        }
+                    );
+
+                    video.addEventListener(
+                        "error",
+                        () => {
+
+                            img.src =
+                                "data:image/svg+xml;charset=UTF-8," +
+                                encodeURIComponent(`
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="320" height="180">
+                                        <rect width="100%" height="100%" fill="#444"/>
+                                        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="24">
+                                            VIDEO
+                                        </text>
+                                    </svg>
+                                `);
+                        }
+                    );
+
+                    const badge =
+                        document.createElement("div");
+
+                    badge.className =
+                        "video-indicator";
+
+                    badge.textContent = "▶";
+
+                    wrapper.appendChild(img);
+                    wrapper.appendChild(badge);
+
+                } else {
+
+                    // IMAGE
+                    img.src = item.url;
+
+                    wrapper.appendChild(img);
+                }
+
+                const imgIndex =
+                    imageElements.length;
+
+                imageElements.push(wrapper);
                 imageData.push(item);
 
-                img.onclick = () => {
+                wrapper.onclick = () => {
+
                     currentIndex = imgIndex;
+
                     openFullscreen();
                 };
 
                 img.onerror = () => {
-                    const placeholder = document.createElement("div");
-                    placeholder.className = "broken-placeholder";
-                    placeholder.textContent = imgIndex + 1;
-                    gallery.replaceChild(placeholder, img);
+
+                    const placeholder =
+                        document.createElement("div");
+
+                    placeholder.className =
+                        "broken-placeholder";
+
+                    placeholder.textContent =
+                        imgIndex + 1;
+
+                    gallery.replaceChild(
+                        placeholder,
+                        wrapper
+                    );
                 };
 
-                gallery.appendChild(img);
+                gallery.appendChild(wrapper);
+
             });
+
         })
+
         .catch(err => {
+
             document.body.innerHTML =
-                "<p style='color:red;'>Failed to load the file.<br>" + err + "</p>";
+                "<p style='color:red;'>Failed to load the file.<br>" +
+                err +
+                "</p>";
         });
 }
 
 function openFullscreen() {
-    const viewer = document.getElementById("fullscreenViewer");
-    const viewerImg = document.getElementById("fullscreenImage");
-    const overlay = document.getElementById("imageTitleOverlay");
 
-    document.getElementById("gallery").style.display = "none";
-    document.getElementById("title").style.display = "none";
+    const viewer =
+        document.getElementById("fullscreenViewer");
+
+    const viewerImg =
+        document.getElementById("fullscreenImage");
+
+    const viewerVideo =
+        document.getElementById("fullscreenVideo");
+
+    const overlay =
+        document.getElementById("imageTitleOverlay");
+
+    document.getElementById("gallery").style.display =
+        "none";
+
+    document.getElementById("title").style.display =
+        "none";
 
     const current = imageData[currentIndex];
 
-    viewerImg.src = current.url;
+    // VIDEO
+    if (current.type === "video") {
 
-    if (current.title) {
-        overlay.textContent = current.title;
-        overlay.style.display = "block";
+        viewerImg.style.display = "none";
+
+        viewerVideo.style.display = "block";
+
+        viewerVideo.src = current.url;
+
+        viewerVideo.load();
+
     } else {
+
+        // IMAGE
+        viewerVideo.pause();
+        viewerVideo.src = "";
+        viewerVideo.style.display = "none";
+
+        viewerImg.style.display = "block";
+
+        viewerImg.src = current.url;
+    }
+
+    // TITLE
+    if (current.title) {
+
+        overlay.textContent = current.title;
+
+        overlay.style.display = "block";
+
+    } else {
+
         overlay.style.display = "none";
     }
 
     viewer.style.display = "flex";
+
     document.body.style.margin = "0";
 }
 
 function closeFullscreen() {
-    document.getElementById("fullscreenViewer").style.display = "none";
-    document.getElementById("gallery").style.display = "flex";
-    document.getElementById("title").style.display = "block";
+
+    const viewerVideo =
+        document.getElementById("fullscreenVideo");
+
+    viewerVideo.pause();
+    viewerVideo.src = "";
+
+    document.getElementById("fullscreenViewer")
+        .style.display = "none";
+
+    document.getElementById("gallery")
+        .style.display = "flex";
+
+    document.getElementById("title")
+        .style.display = "block";
+
     document.body.style.margin = "20px";
 }
 
 function showNext() {
-    currentIndex = (currentIndex + 1) % imageData.length;
+
+    currentIndex =
+        (currentIndex + 1) % imageData.length;
+
     openFullscreen();
 }
 
 function showPrev() {
-    currentIndex = (currentIndex - 1 + imageData.length) % imageData.length;
+
+    currentIndex =
+        (currentIndex - 1 + imageData.length)
+        % imageData.length;
+
     openFullscreen();
 }
 
-document.getElementById("fullscreenViewer").onclick = closeFullscreen;
+// CLOSE BUTTON
+document.getElementById("closeBtn")
+    .onclick = closeFullscreen;
 
+// KEYBOARD
 document.addEventListener("keydown", (e) => {
-    const viewerVisible = document.getElementById("fullscreenViewer").style.display === "flex";
+
+    const viewerVisible =
+        document.getElementById("fullscreenViewer")
+        .style.display === "flex";
+
     if (!viewerVisible) return;
 
-    if (e.key === "Escape") closeFullscreen();
-    if (e.key === "ArrowRight") showNext();
-    if (e.key === "ArrowLeft") showPrev();
+    if (e.key === "Escape") {
+        closeFullscreen();
+    }
+
+    if (e.key === "ArrowRight") {
+        showNext();
+    }
+
+    if (e.key === "ArrowLeft") {
+        showPrev();
+    }
 });
 
-const viewer = document.getElementById("fullscreenViewer");
+// SWIPE SUPPORT
+const viewer =
+    document.getElementById("fullscreenViewer");
 
 viewer.addEventListener("touchstart", (e) => {
-    touchStartX = e.changedTouches[0].screenX;
+
+    touchStartX =
+        e.changedTouches[0].screenX;
 });
 
 viewer.addEventListener("touchend", (e) => {
-    touchEndX = e.changedTouches[0].screenX;
+
+    touchEndX =
+        e.changedTouches[0].screenX;
+
     handleSwipe();
 });
 
 function handleSwipe() {
-    const threshold = 50;
-    const diff = touchEndX - touchStartX;
 
-    if (Math.abs(diff) < threshold) return;
+    const threshold = 50;
+
+    const diff =
+        touchEndX - touchStartX;
+
+    if (Math.abs(diff) < threshold)
+        return;
 
     if (diff < 0) {
+
         showNext();
+
     } else {
+
         showPrev();
     }
 }
+
 </script>
 
 </body>
